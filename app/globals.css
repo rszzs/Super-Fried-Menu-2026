@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+@theme {
+  --color-natural-canvas: #FAF9F6;
+  --color-natural-surface: #FFFFFF;
+  --color-natural-card: #F8F7F3;
+  --color-natural-primary: #283618;
+  --color-natural-primary-dark: #1A2410;
+  --color-natural-primary-light: #3D5024;
+  --color-natural-moss: #606C38;
+  --color-natural-moss-light: #E9EDC9;
+  --color-natural-accent: #BC6C25;
+  --color-natural-accent-hover: #A25B1D;
+  --color-natural-accent-light: #DDA15E;
+  --color-natural-cream: #FEFAE0;
+  --color-natural-border: #E8E5DF;
+  --color-natural-border-subtle: #F0ECE4;
+  --color-natural-text: #283618;
+  --color-natural-muted: #6B705C;
+  --color-natural-subtle: #989B8B;
+}
+
+body {
+  background-color: #FAF9F6;
+  color: #283618;
+}
+
+@layer utilities {
+  /* Hide scrollbar for horizontal category scrolling */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #printable-qr-section, #printable-qr-section * {
+    visibility: visible;
+  }
+  #printable-qr-section {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 20px;
+    background: white !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
+

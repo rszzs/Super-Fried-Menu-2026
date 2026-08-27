@@ -1,0 +1,8 @@
+{
+  "name": "Remix مطعم سوبر فرايد - بغداد ",
+  "description": "A luxury, high-performance multilingual restaurant digital menu (Arabic, English, Kurdish, Turkish) with category filtering, item customizers, WhatsApp table ordering, dynamic QR code management, and live admin dashboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
