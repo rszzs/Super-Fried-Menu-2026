@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { motion } from 'motion/react';
 import { CartItem, Language, RestaurantSettings, TableOrder } from '@/types/menu';
 import { translations, formatPrice, isRtl } from '@/lib/i18n';
 import { 
@@ -14,8 +15,7 @@ import {
   CheckCircle2, 
   ShoppingBag,
   Sparkles,
-  ArrowRight,
-  Send
+  PartyPopper
 } from 'lucide-react';
 
 interface CartDrawerProps {
@@ -46,35 +46,86 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   onProcessOrder,
 }) => {
   const [orderSent, setOrderSent] = useState(false);
+  const [lastOrderDetails, setLastOrderDetails] = useState<{
+    orderId: string;
+    tableText: string;
+    itemsCount: number;
+    totalAmount: number;
+    type: 'whatsapp' | 'kitchen';
+  } | null>(null);
+
   const t = translations[currentLang];
   const rtl = isRtl(currentLang);
-
-  if (!isOpen) return null;
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.totalPrice, 0);
   const total = subtotal;
 
-  const triggerConfetti = async () => {
+  const triggerCelebration = async () => {
     try {
       const confetti = (await import('canvas-confetti')).default;
+
+      // 1. Initial powerful center starburst
       confetti({
-        particleCount: 80,
-        spread: 70,
-        origin: { y: 0.6 },
+        particleCount: 85,
+        spread: 75,
+        origin: { y: 0.55 },
+        colors: ['#283618', '#BC6C25', '#DDA15E', '#606C38', '#FEFAE0', '#FFD700', '#25D366'],
+        zIndex: 99999,
+        scalar: 1.15,
       });
+
+      // 2. Left and Right firework cannons
+      setTimeout(() => {
+        confetti({
+          particleCount: 50,
+          angle: 60,
+          spread: 60,
+          origin: { x: 0.15, y: 0.65 },
+          colors: ['#BC6C25', '#DDA15E', '#FFD700', '#25D366', '#283618'],
+          zIndex: 99999,
+        });
+        confetti({
+          particleCount: 50,
+          angle: 120,
+          spread: 60,
+          origin: { x: 0.85, y: 0.65 },
+          colors: ['#BC6C25', '#DDA15E', '#FFD700', '#25D366', '#283618'],
+          zIndex: 99999,
+        });
+      }, 220);
+
+      // 3. Falling fireworks confetti shower
+      setTimeout(() => {
+        confetti({
+          particleCount: 45,
+          spread: 120,
+          origin: { y: 0.35 },
+          shapes: ['circle', 'square'],
+          colors: ['#FFD700', '#FEFAE0', '#E9EDC9', '#DDA15E', '#BC6C25'],
+          zIndex: 99999,
+          scalar: 1.1,
+        });
+      }, 550);
     } catch {
       // ignore
     }
   };
 
+  useEffect(() => {
+    if (orderSent) {
+      triggerCelebration();
+    }
+  }, [orderSent]);
+
+  if (!isOpen) return null;
+
   const handleSendViaWhatsApp = () => {
     if (cartItems.length === 0) return;
 
-    triggerConfetti();
-
     // Create Order History record
+    const uniqueId = `ord-${subtotal}-${cartItems.length}-${cartItems[0]?.cartItemId?.slice(-3) || '1'}`;
     const newOrder: TableOrder = {
-      id: `ord-${Date.now().toString().slice(-4)}`,
+      id: uniqueId,
       tableNumber: tableNumber ? tableNumber.trim() : 'Takeaway / سفري',
       items: [...cartItems],
       subtotal,
@@ -138,17 +189,24 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
 
     window.open(whatsappUrl, '_blank');
+
+    setLastOrderDetails({
+      orderId: uniqueId,
+      tableText: tableNumber ? `#${tableNumber.trim()}` : (currentLang === 'ar' ? 'سفري / خارجي' : 'Takeaway'),
+      itemsCount: cartItems.reduce((acc, i) => acc + i.quantity, 0),
+      totalAmount: total,
+      type: 'whatsapp',
+    });
     setOrderSent(true);
   };
 
   const handleDirectKitchenSend = () => {
     if (cartItems.length === 0) return;
 
-    triggerConfetti();
-
     // Create Order History record
+    const kitchenOrderId = `ord-k${subtotal}-${cartItems.length}-${cartItems[0]?.cartItemId?.slice(-3) || '2'}`;
     const newOrder: TableOrder = {
-      id: `ord-${Date.now().toString().slice(-4)}`,
+      id: kitchenOrderId,
       tableNumber: tableNumber ? tableNumber.trim() : 'Kitchen / مباشر',
       items: [...cartItems],
       subtotal,
@@ -166,6 +224,13 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
       onProcessOrder(newOrder);
     }
 
+    setLastOrderDetails({
+      orderId: kitchenOrderId,
+      tableText: tableNumber ? `#${tableNumber.trim()}` : (currentLang === 'ar' ? 'المطبخ / مباشر' : 'Kitchen Direct'),
+      itemsCount: cartItems.reduce((acc, i) => acc + i.quantity, 0),
+      totalAmount: total,
+      type: 'kitchen',
+    });
     setOrderSent(true);
   };
 
@@ -240,31 +305,165 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
         {/* Content Body */}
         {orderSent ? (
-          <div className="flex-1 p-6 flex flex-col items-center justify-center text-center space-y-4">
-            <div className="w-16 h-16 rounded-full bg-[#E9EDC9] text-[#283618] flex items-center justify-center animate-bounce">
-              <CheckCircle2 className="w-10 h-10 text-[#283618]" />
+          <div className="flex-1 p-6 flex flex-col items-center justify-center text-center relative overflow-hidden">
+            {/* Background celebratory glow rings */}
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ 
+                scale: [1, 1.3, 1],
+                opacity: [0.35, 0.1, 0.35],
+              }}
+              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+              className="absolute w-64 h-64 rounded-full bg-[#E9EDC9]/60 blur-2xl pointer-events-none"
+            />
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ 
+                scale: [1.1, 1.45, 1.1],
+                opacity: [0.25, 0.05, 0.25],
+              }}
+              transition={{ duration: 3, repeat: Infinity, delay: 0.4, ease: 'easeInOut' }}
+              className="absolute w-48 h-48 rounded-full bg-[#DDA15E]/30 blur-xl pointer-events-none"
+            />
+
+            {/* Central Celebratory Icon Badge */}
+            <div className="relative mb-4">
+              <motion.div
+                initial={{ scale: 0, rotate: -20 }}
+                animate={{ 
+                  scale: 1, 
+                  rotate: 0,
+                  transition: { type: 'spring', stiffness: 280, damping: 14 }
+                }}
+                className="w-24 h-24 rounded-3xl bg-linear-to-tr from-[#283618] via-[#3D5024] to-[#606C38] text-white flex items-center justify-center shadow-xl shadow-[#283618]/25 border-4 border-[#FEFAE0] relative z-10"
+              >
+                <CheckCircle2 className="w-12 h-12 text-[#E9EDC9]" />
+                
+                {/* Floating mini sparkles & party popper */}
+                <motion.div
+                  animate={{ 
+                    rotate: [0, 15, -15, 0],
+                    scale: [1, 1.15, 1],
+                  }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                  className="absolute -top-2.5 -end-2.5 w-9 h-9 rounded-full bg-[#BC6C25] text-white flex items-center justify-center shadow-md border-2 border-white"
+                >
+                  <PartyPopper className="w-4 h-4" />
+                </motion.div>
+                
+                <motion.div
+                  animate={{ 
+                    scale: [0.8, 1.2, 0.8],
+                    opacity: [0.7, 1, 0.7]
+                  }}
+                  transition={{ duration: 1.8, repeat: Infinity, delay: 0.3 }}
+                  className="absolute -bottom-1 -start-1 w-6 h-6 rounded-full bg-[#DDA15E] text-[#283618] flex items-center justify-center shadow-xs border-2 border-white"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                </motion.div>
+              </motion.div>
             </div>
-            <h3 className="text-xl font-black text-[#283618]">
-              {t.quickActions.callWaiterSuccess}
-            </h3>
-            <p className="text-xs sm:text-sm text-[#6B705C] max-w-xs leading-relaxed">
-              {tableNumber ? `${t.cart.tableNumber} #${tableNumber}` : ''}
-              {' — '}
-              {currentLang === 'ar' ? 'فريق الطهاة والخدمة يجهز طلبك الآن بأعلى معايير الجودة!' : 'The kitchen team is preparing your delicious order right now!'}
-            </p>
-            <div className="pt-4 flex flex-col gap-2 w-full max-w-xs">
+
+            {/* Headings */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15, duration: 0.35 }}
+              className="space-y-2 max-w-xs"
+            >
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E9EDC9] text-[#283618] text-xs font-black">
+                <Sparkles className="w-3 h-3 text-[#BC6C25]" />
+                <span>{currentLang === 'ar' ? 'تم تأكيد الإرسال بنجاح' : 'Order Confirmed'}</span>
+              </span>
+              
+              <h3 className="text-xl sm:text-2xl font-black text-[#283618] tracking-tight">
+                {currentLang === 'ar' ? 'طلبك في طريقه للمطبخ! 🎉' :
+                 currentLang === 'fa' ? 'سفارش شما ارسال شد! 🎉' :
+                 currentLang === 'ur' ? 'آپ کا آرڈر موصول ہو گیا! 🎉' :
+                 currentLang === 'ku' ? 'داواکاریەکەت نێردرا! 🎉' :
+                 currentLang === 'tr' ? 'Siparişiniz Gönderildi! 🎉' :
+                 'Order Sent Successfully! 🎉'}
+              </h3>
+              
+              <p className="text-xs text-[#6B705C] leading-relaxed">
+                {currentLang === 'ar' ? 'شكراً لاختيارك لنا! فريق الطهاة والخدمة بدأ تحضير طلبك اللذيذ بأعلى جودة.' :
+                 currentLang === 'fa' ? 'از انتخاب شما متشکریم! سرآشپزها آماده‌سازی سفارش لذیذ شما را آغاز کردند.' :
+                 currentLang === 'ur' ? 'شکریہ! ہمارے ماہر شیف آپ کے لذیذ کھانے کی تیاری میں مصروف ہیں۔' :
+                 currentLang === 'ku' ? 'سوپاس بۆ هەڵبژاردنت! دەستەی چێشتلێنەرەکانمان دەستیان بە ئامادەکردنی کرد.' :
+                 currentLang === 'tr' ? 'Bizi tercih ettiğiniz için teşekkürler! Şeflerimiz siparişinizi hazırlıyor.' :
+                 'Thank you for dining with us! The kitchen team is now preparing your delicious meal.'}
+              </p>
+            </motion.div>
+
+            {/* Receipt Summary Pill */}
+            {lastOrderDetails && (
+              <motion.div
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25, duration: 0.35 }}
+                className="mt-4 p-3.5 rounded-2xl bg-[#FAF9F6] border border-[#E8E5DF] w-full max-w-xs text-xs space-y-2 shadow-2xs"
+              >
+                <div className="flex items-center justify-between text-[#6B705C]">
+                  <span className="font-semibold">{t.cart.tableNumber}:</span>
+                  <span className="font-bold text-[#283618] px-2 py-0.5 rounded-md bg-[#FEFAE0] border border-[#E9EDC9]">
+                    {lastOrderDetails.tableText}
+                  </span>
+                </div>
+                
+                <div className="flex items-center justify-between text-[#6B705C]">
+                  <span className="font-semibold">{t.cart.itemsCount}:</span>
+                  <span className="font-bold text-[#283618]">
+                    {lastOrderDetails.itemsCount} {t.cart.itemsCount}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between text-[#283618] font-bold pt-1.5 border-t border-[#E8E5DF]">
+                  <span>{t.cart.total}:</span>
+                  <span className="text-sm font-black text-[#283618]">
+                    {formatPrice(lastOrderDetails.totalAmount, settings.currency, currentLang)}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-center gap-1.5 pt-1 text-[11px] text-[#283618] font-bold">
+                  <span className="w-2 h-2 rounded-full bg-[#25D366] animate-ping" />
+                  <span className="w-2 h-2 rounded-full bg-[#25D366] -ms-3" />
+                  <span>
+                    {currentLang === 'ar' ? 'قيد التحضير في المطبخ الآن' : 'Now preparing in the kitchen'}
+                  </span>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Action Buttons */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.35, duration: 0.35 }}
+              className="mt-5 flex flex-col gap-2 w-full max-w-xs"
+            >
+              <button
+                id="re-celebrate-confetti-btn"
+                type="button"
+                onClick={triggerCelebration}
+                className="w-full py-2.5 px-3 rounded-xl bg-[#FEFAE0] hover:bg-[#FFF7D6] text-[#8C3400] text-xs font-bold transition-all border border-[#E9EDC9] flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-98"
+              >
+                <PartyPopper className="w-3.5 h-3.5 text-[#BC6C25]" />
+                <span>{currentLang === 'ar' ? 'إطلاق مفرقعات واحتفال مجدداً ✨' : 'Celebrate Again ✨'}</span>
+              </button>
+
               <button
                 id="order-sent-close-btn"
+                type="button"
                 onClick={() => {
                   setOrderSent(false);
                   onClearCart();
                   onClose();
                 }}
-                className="w-full py-3 rounded-xl bg-[#283618] text-white text-xs sm:text-sm font-bold hover:bg-[#1A2410] transition-colors"
+                className="w-full py-3 rounded-xl bg-[#283618] text-white text-xs sm:text-sm font-bold hover:bg-[#1A2410] transition-colors shadow-md shadow-[#1A2410]/20 cursor-pointer"
               >
                 {t.viewMenu}
               </button>
-            </div>
+            </motion.div>
           </div>
         ) : cartItems.length === 0 ? (
           <div className="flex-1 p-6 flex flex-col items-center justify-center text-center text-[#989B8B] space-y-3">
@@ -408,6 +607,17 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
             >
               <Utensils className="w-4 h-4 text-[#BC6C25]" />
               <span>{t.cart.sendToKitchen}</span>
+            </button>
+
+            {/* Explicit Close Cart Drawer Button */}
+            <button
+              id="close-cart-bottom-btn"
+              type="button"
+              onClick={onClose}
+              className="w-full py-2 px-4 rounded-xl bg-[#F0ECE4] hover:bg-[#E8E5DF] text-[#283618] font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+              <span>إغلاق السلة ومتابعة التصفح</span>
             </button>
 
           </div>

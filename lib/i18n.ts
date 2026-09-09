@@ -145,6 +145,22 @@ export interface TranslationDictionary {
     resetToDefaults: string;
     exportBackup: string;
     importBackup: string;
+    promotionsTab: string;
+    promoBannerTitle: string;
+    promoBannerSubtitle: string;
+    enablePromoBanner: string;
+    promoBadgeLabel: string;
+    promoHeadingLabel: string;
+    promoDescLabel: string;
+    promoDiscountBadge: string;
+    promoCodeLabel: string;
+    promoValidityLabel: string;
+    promoCtaLabel: string;
+    promoThemeLabel: string;
+    promoCopyCode: string;
+    promoCopiedCode: string;
+    promoImageLabel: string;
+    promoPreview: string;
   };
   qr: {
     title: string;
@@ -327,6 +343,22 @@ export const translations: Record<Language, TranslationDictionary> = {
       resetToDefaults: 'استعادة المنيو النموذجي الافتراضي',
       exportBackup: 'تصدير نسخة احتياطية (JSON)',
       importBackup: 'استيراد نسخة احتياطية',
+      promotionsTab: 'العروض والبانر الترويجي',
+      promoBannerTitle: 'بانر العروض والخصومات الموسمية',
+      promoBannerSubtitle: 'إدارة وإبراز عروض التخفيضات والوجبات الموسمية على الصفحة الرئيسية',
+      enablePromoBanner: 'تفعيل إظهار البانر الترويجي في الصفحة الرئيسية',
+      promoBadgeLabel: 'شارة العرض (مثال: عرض الموسم 🔥)',
+      promoHeadingLabel: 'عنوان العرض الترويجي',
+      promoDescLabel: 'تفاصيل ووصف العرض',
+      promoDiscountBadge: 'نسبة أو قيمة الخصم (مثال: 20% OFF)',
+      promoCodeLabel: 'كوبون الخصم (مثال: SUPER20)',
+      promoValidityLabel: 'صلاحية العرض (مثال: لفترة محدودة)',
+      promoCtaLabel: 'نص زر الطلب / التفاعل',
+      promoThemeLabel: 'نمط ولون البانر الترويجي',
+      promoCopyCode: 'نسخ الكود',
+      promoCopiedCode: 'تم النسخ بنجاح!',
+      promoImageLabel: 'رابط صورة العرض الشهية',
+      promoPreview: 'معاينة حية للبانر الترويجي',
     },
     qr: {
       title: 'نظام الـ QR Code الديناميكي للطاولات',
@@ -508,6 +540,22 @@ export const translations: Record<Language, TranslationDictionary> = {
       resetToDefaults: 'Reset to Sample Menu',
       exportBackup: 'Export Backup JSON',
       importBackup: 'Import Backup JSON',
+      promotionsTab: 'Offers & Promo Banner',
+      promoBannerTitle: 'Seasonal Promotional Banner & Deals',
+      promoBannerSubtitle: 'Highlight current seasonal offers, discount codes, and special meals on the homepage',
+      enablePromoBanner: 'Display promotional banner on the homepage',
+      promoBadgeLabel: 'Offer Badge (e.g. Seasonal Deal 🔥)',
+      promoHeadingLabel: 'Promo Title / Heading',
+      promoDescLabel: 'Offer Description & Details',
+      promoDiscountBadge: 'Discount Tag (e.g. 20% OFF)',
+      promoCodeLabel: 'Promo / Coupon Code (e.g. SUPER20)',
+      promoValidityLabel: 'Validity Note (e.g. Limited Time Offer)',
+      promoCtaLabel: 'Call to Action Button Text',
+      promoThemeLabel: 'Banner Color Theme',
+      promoCopyCode: 'Copy Code',
+      promoCopiedCode: 'Copied!',
+      promoImageLabel: 'Appetizing Promo Image URL',
+      promoPreview: 'Live Banner Preview',
     },
     qr: {
       title: 'Dynamic Table QR Code Studio',
@@ -689,6 +737,22 @@ export const translations: Record<Language, TranslationDictionary> = {
       resetToDefaults: 'گەڕاندنەوە بۆ مینیۆی سەرەتایی',
       exportBackup: 'داگرتنی کۆپی پارێزراو (JSON)',
       importBackup: 'هێنانی فایلی پارێزراو',
+      promotionsTab: 'ئۆفەرەکان و بانەری ڕیکلام',
+      promoBannerTitle: 'بانەری ئۆفەر و داشکاندنە وەرزییەکان',
+      promoBannerSubtitle: 'بەڕێوەبردن و نیشاندانی داشکاندن و ئۆفەری تایبەت لە پەڕەی سەرەکی',
+      enablePromoBanner: 'چالاککردنی بانەری ڕیکلام لە پەڕەی سەرەکی',
+      promoBadgeLabel: 'نیشانەی ئۆفەر (نموونە: ئۆفەری وەرزی 🔥)',
+      promoHeadingLabel: 'سەردێڕی ئۆفەر',
+      promoDescLabel: 'ڕوونکردنەوە و وردەکاری ئۆفەر',
+      promoDiscountBadge: 'ڕێژەی داشکاندن (نموونە: 20% OFF)',
+      promoCodeLabel: 'کۆدی داشکاندن (نموونە: SUPER20)',
+      promoValidityLabel: 'ماوەی ئۆفەر (نموونە: بۆ ماوەیەکی دیاریکراو)',
+      promoCtaLabel: 'دەقی دوگمەی داواکردن',
+      promoThemeLabel: 'شێواز و ڕەنگی بانەر',
+      promoCopyCode: 'کۆپیکردنی کۆد',
+      promoCopiedCode: 'کۆپیکرا!',
+      promoImageLabel: 'بەستەری وێنەی خواردن بۆ بانەر',
+      promoPreview: 'پێشبینینی ڕاستەوخۆ',
     },
     qr: {
       title: 'دروستکەری کودی QR ی دینامیکی مێزەکان',
@@ -870,6 +934,22 @@ export const translations: Record<Language, TranslationDictionary> = {
       resetToDefaults: 'Örnek Menüye Sıfırla',
       exportBackup: 'Yedeği İndir (JSON)',
       importBackup: 'Yedek Yükle (JSON)',
+      promotionsTab: 'Fırsatlar & Kampanya Bannerı',
+      promoBannerTitle: 'Mevsimlik Kampanya ve İndirim Bannerı',
+      promoBannerSubtitle: 'Ana sayfada geçerli kampanya, indirim kuponu ve özel menüleri öne çıkarın',
+      enablePromoBanner: 'Kampanya bannerını ana sayfada göster',
+      promoBadgeLabel: 'Kampanya Rozeti (Örn: Sezon Fırsatı 🔥)',
+      promoHeadingLabel: 'Kampanya Başlığı',
+      promoDescLabel: 'Kampanya Detayları ve Açıklaması',
+      promoDiscountBadge: 'İndirim Oranı / Etiket (Örn: 20% OFF)',
+      promoCodeLabel: 'Kupon Kodu (Örn: SUPER20)',
+      promoValidityLabel: 'Geçerlilik Süresi (Örn: Sınırlı Süre)',
+      promoCtaLabel: 'Sipariş Butonu Yazısı',
+      promoThemeLabel: 'Banner Renk Teması',
+      promoCopyCode: 'Kodu Kopyala',
+      promoCopiedCode: 'Kopyalandı!',
+      promoImageLabel: 'Kampanya Görseli Bağlantısı',
+      promoPreview: 'Canlı Banner Önizlemesi',
     },
     qr: {
       title: 'Dinamik Masa QR Kod Stüdyosu',
@@ -1050,6 +1130,22 @@ export const translations: Record<Language, TranslationDictionary> = {
       resetToDefaults: 'بازنشانی به منوی پیش‌فرض',
       exportBackup: 'دانلود فایل پشتیبان (Export Backup)',
       importBackup: 'بازیابی فایل پشتیبان (Import Backup)',
+      promotionsTab: 'تخفیف‌ها و بنر تبلیغاتی',
+      promoBannerTitle: 'بنر تخفیف‌ها و پیشنهادهای فصلی',
+      promoBannerSubtitle: 'مدیریت و نمایش تخفیف‌ها، کدهای کوپن و پیشنهادهای فصلی در صفحه اصلی',
+      enablePromoBanner: 'فعال‌سازی نمایش بنر تبلیغاتی در صفحه اصلی',
+      promoBadgeLabel: 'برچسب پیشنهاد (مثال: پیشنهاد ویژه فصل 🔥)',
+      promoHeadingLabel: 'عنوان بنر تخفیف',
+      promoDescLabel: 'جزئیات و توضیحات پیشنهاد',
+      promoDiscountBadge: 'درصد یا میزان تخفیف (مثال: 20% OFF)',
+      promoCodeLabel: 'کد تخفیف (مثال: SUPER20)',
+      promoValidityLabel: 'مدت اعتبار (مثال: فرصت محدود)',
+      promoCtaLabel: 'متن دکمه سفارش و مشاهده',
+      promoThemeLabel: 'تم رنگی بنر',
+      promoCopyCode: 'کپی کد',
+      promoCopiedCode: 'کپی شد!',
+      promoImageLabel: 'لینک تصویر جذاب غذا',
+      promoPreview: 'پیش‌نمایش زنده بنر',
     },
     qr: {
       title: 'استودیو کدهای QR هوشمند میزها',
@@ -1230,6 +1326,22 @@ export const translations: Record<Language, TranslationDictionary> = {
       resetToDefaults: 'ڈیفالٹ مینو پر ری سیٹ کریں',
       exportBackup: 'بیک اپ ڈاؤن لوڈ کریں',
       importBackup: 'بیک اپ ریسٹور کریں',
+      promotionsTab: 'آفرز اور پروموشنل بینر',
+      promoBannerTitle: 'موسمی ڈسکاؤنٹس اور پروموشنل بینر',
+      promoBannerSubtitle: 'مرکزی صفحے پر موجودہ آفرز، ڈسکاؤنٹ کوڈز اور خصوصی ڈشز کو نمایاں کریں',
+      enablePromoBanner: 'ہوم پیج پر پروموشنل بینر دکھائیں',
+      promoBadgeLabel: 'آفر کا ٹیگ (مثال: سیزن کا خصوصی آفر 🔥)',
+      promoHeadingLabel: 'پروموشنل عنوان',
+      promoDescLabel: 'آفر کی تفصیلات',
+      promoDiscountBadge: 'ڈسکاؤنٹ ٹیگ (مثال: 20% OFF)',
+      promoCodeLabel: 'ڈسکاؤنٹ کوڈ (مثال: SUPER20)',
+      promoValidityLabel: 'میعاد (مثال: محدود وقت کے لیے)',
+      promoCtaLabel: 'آرڈر بٹن کا ٹیکسٹ',
+      promoThemeLabel: 'بینر کلر تھیم',
+      promoCopyCode: 'کوڈ کاپی کریں',
+      promoCopiedCode: 'کاپی ہو گیا!',
+      promoImageLabel: 'کھانے کی تصویر کا لنک',
+      promoPreview: 'بینر کا لائیو پریویو',
     },
     qr: {
       title: 'ڈائنامک کیو آر کوڈ اسٹوڈیو',

@@ -69,6 +69,19 @@ export interface Category {
   order: number;
 }
 
+export interface PromotionalBannerConfig {
+  enabled: boolean;
+  badge: MultilingualText;
+  title: MultilingualText;
+  description: MultilingualText;
+  discountBadge?: string;
+  promoCode?: string;
+  validUntil?: MultilingualText;
+  ctaText?: MultilingualText;
+  accentTheme?: 'amber' | 'crimson' | 'emerald' | 'sunset';
+  imageUrl?: string;
+}
+
 export interface RestaurantSettings {
   name: MultilingualText;
   tagline: MultilingualText;
@@ -86,6 +99,7 @@ export interface RestaurantSettings {
   adminPin: string;
   allowTableOrdering: boolean;
   allowWaiterCall: boolean;
+  promotionalBanner?: PromotionalBannerConfig;
 }
 
 export interface CartItem {

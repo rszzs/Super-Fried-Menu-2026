@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { Language, RestaurantSettings } from '@/types/menu';
 import { translations, isRtl } from '@/lib/i18n';
 import { SuperFriedLogo } from './SuperFriedLogo';
-import { ShareMenuModal } from './ShareMenuModal';
 import { 
   Globe, 
   ShoppingBag, 
@@ -15,9 +14,7 @@ import {
   MapPin, 
   Check, 
   X,
-  ChevronDown,
-  Share2,
-  MessageCircle
+  ChevronDown
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -29,6 +26,7 @@ interface NavbarProps {
   onOpenAdminModal: () => void;
   tableNumber: string;
   settings: RestaurantSettings;
+  onGoHome?: () => void;
 }
 
 const languages: { code: Language; label: string; flag: string; nativeName: string }[] = [
@@ -49,21 +47,43 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAdminModal,
   tableNumber,
   settings,
+  onGoHome,
 }) => {
   const [langMenuOpen, setLangMenuOpen] = useState(false);
-  const [shareModalOpen, setShareModalOpen] = useState(false);
   const t = translations[currentLang];
   const rtl = isRtl(currentLang);
 
   const currentLangObj = languages.find((l) => l.code === currentLang) || languages[0];
+
+  const handleReturnHome = () => {
+    if (onGoHome) {
+      onGoHome();
+    } else if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
 
   return (
     <header className="sticky top-0 z-40 bg-linear-to-r from-[#8C3400] via-[#A73E00] to-[#9A3412] text-white backdrop-blur-md border-b border-[#732900] shadow-md transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
           
-          {/* Logo & Restaurant Title */}
-          <div className="flex items-center gap-2.5 sm:gap-3.5 cursor-pointer group transition-transform duration-200 hover:scale-[1.02]">
+          {/* Logo & Restaurant Title - Returns to Home on Click */}
+          <div 
+            id="navbar-logo-home-btn"
+            role="button"
+            tabIndex={0}
+            onClick={handleReturnHome}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleReturnHome();
+              }
+            }}
+            className="flex items-center gap-2.5 sm:gap-3.5 cursor-pointer group transition-transform duration-200 hover:scale-[1.02] select-none"
+            title={currentLang === 'ar' ? 'العودة إلى الصفحة الرئيسية' : 'Return to Home'}
+            aria-label="Return to Home"
+          >
             <div className="w-11 h-11 sm:w-13 sm:h-13 rounded-2xl bg-white p-1 flex items-center justify-center shadow-md border border-white/30 shrink-0 group-hover:scale-105 group-hover:rotate-1 transition-transform duration-300">
               <SuperFriedLogo size={38} />
             </div>
@@ -84,22 +104,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </div>
 
-          {/* Action Buttons: Chat/Share, Waiter Notifications, Cart & Admin */}
+          {/* Action Buttons: Waiter Notifications, Cart & Admin */}
           <div className="flex items-center gap-2 sm:gap-3">
-            
-            {/* Share Menu / WhatsApp Chat Button */}
-            <button
-              id="share-menu-nav-btn"
-              onClick={() => setShareModalOpen(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg bg-white/15 hover:bg-white/25 text-white text-xs sm:text-sm font-bold transition-all border border-white/20 shadow-xs group"
-              title="مشاركة رابط المنيو والدردشة عبر واتساب"
-              aria-label="Share Menu Link"
-            >
-              <MessageCircle className="w-4 h-4 text-[#FEFAE0] shrink-0 group-hover:scale-110 transition-transform" />
-              <span className="hidden md:inline text-white font-semibold">مشاركة الرابط</span>
-              <Share2 className="w-3.5 h-3.5 text-white/80 hidden sm:inline" />
-            </button>
-
             {/* Call Waiter & Notification Bell Button */}
             <button
               id="call-waiter-nav-btn"
@@ -160,9 +166,21 @@ export const Navbar: React.FC<NavbarProps> = ({
                     rtl ? 'left-0' : 'right-0'
                   } mt-2 w-56 rounded-2xl bg-white border border-[#E8E5DF] shadow-2xl py-2 z-50 animate-in fade-in zoom-in-95 duration-150`}
                 >
-                  <div className="px-3.5 py-1.5 text-[11px] font-bold text-[#8C3400] uppercase tracking-wider border-b border-[#F0ECE4] flex items-center gap-1.5">
-                    <Globe className="w-3.5 h-3.5 text-[#8C3400]" />
-                    <span>اختر اللغة / Select Language</span>
+                  <div className="px-3.5 py-1.5 text-[11px] font-bold text-[#8C3400] uppercase tracking-wider border-b border-[#F0ECE4] flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <Globe className="w-3.5 h-3.5 text-[#8C3400]" />
+                      <span>اختر اللغة / Select Language</span>
+                    </div>
+                    <button
+                      id="close-lang-menu-btn"
+                      type="button"
+                      onClick={() => setLangMenuOpen(false)}
+                      className="p-1 rounded-md text-stone-400 hover:text-[#8C3400] hover:bg-[#FEFAE0] transition-colors"
+                      aria-label="إغلاق قائمة اللغات / Close"
+                      title="إغلاق / Close"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                   <div className="py-1">
                     {languages.map((lang) => (
@@ -189,21 +207,25 @@ export const Navbar: React.FC<NavbarProps> = ({
                       </button>
                     ))}
                   </div>
+
+                  {/* Bottom Close Button */}
+                  <div className="px-2 pt-1.5 pb-0.5 border-t border-[#F0ECE4]">
+                    <button
+                      id="close-lang-menu-footer-btn"
+                      type="button"
+                      onClick={() => setLangMenuOpen(false)}
+                      className="w-full py-1.5 px-3 rounded-xl bg-[#F0ECE4] hover:bg-[#E8E5DF] text-[#283618] text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
+                    >
+                      <X className="w-3.5 h-3.5 text-[#8C3400]" />
+                      <span>إغلاق القائمة / Close</span>
+                    </button>
+                  </div>
                 </div>
               </>
             )}
           </div>
         </div>
       </div>
-
-      {/* Share Modal Customized by Order Type */}
-      <ShareMenuModal
-        isOpen={shareModalOpen}
-        onClose={() => setShareModalOpen(false)}
-        currentLang={currentLang}
-        settings={settings}
-        currentTable={tableNumber}
-      />
     </header>
   );
 };

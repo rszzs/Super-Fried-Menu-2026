@@ -579,6 +579,17 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({
             </span>
           </button>
 
+          {/* Explicit Close Button in Footer */}
+          <button
+            id="close-item-modal-footer-btn"
+            type="button"
+            onClick={onClose}
+            className="w-full sm:w-auto py-3.5 px-4 rounded-xl bg-[#F0ECE4] hover:bg-[#E8E5DF] text-[#283618] font-bold text-xs sm:text-sm transition-colors flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+          >
+            <X className="w-4 h-4" />
+            <span>إغلاق</span>
+          </button>
+
         </div>
 
       </div>

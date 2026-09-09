@@ -10,7 +10,9 @@ import {
   DietaryTag, 
   Allergen,
   ItemSizeOption,
-  ItemAddon
+  ItemAddon,
+  PromotionalBannerConfig,
+  TableOrder
 } from '@/types/menu';
 import { translations, formatPrice, isRtl } from '@/lib/i18n';
 import { DynamicQrStudio } from './DynamicQrStudio';
@@ -36,7 +38,17 @@ import {
   AlertCircle,
   Clock,
   Layers,
-  ChefHat
+  ChefHat,
+  Flame,
+  Tag,
+  ShoppingBag,
+  Percent,
+  Eye,
+  TrendingUp,
+  CheckCircle,
+  Receipt,
+  Calendar,
+  Copy
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -45,9 +57,13 @@ interface AdminDashboardProps {
   menuItems: MenuItem[];
   categories: Category[];
   settings: RestaurantSettings;
+  orders?: TableOrder[];
   onUpdateMenuItems: (items: MenuItem[]) => void;
   onUpdateCategories: (cats: Category[]) => void;
   onUpdateSettings: (settings: RestaurantSettings) => void;
+  onUpdateOrderStatus?: (orderId: string, status: TableOrder['status']) => void;
+  onDeleteOrder?: (orderId: string) => void;
+  onClearOrders?: () => void;
   onResetToDefaults: () => void;
   currentLang: Language;
 }
@@ -69,15 +85,28 @@ const foodImagePresets = [
   { label: 'Turkish Coffee', url: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=800&q=80' },
 ];
 
+const promoImagePresets = [
+  { label: 'Crispy Fried Chicken', url: 'https://images.unsplash.com/photo-1625813506062-0aeb1d7a094b?auto=format&fit=crop&w=1000&q=80' },
+  { label: 'Gourmet Double Burger', url: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=1000&q=80' },
+  { label: 'Golden Rizo & Strips', url: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1000&q=80' },
+  { label: 'Family Bucket Feast', url: 'https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=1000&q=80' },
+  { label: 'Mixed Grill & Kebab', url: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=1000&q=80' },
+  { label: 'Crispy Fries & Sauces', url: 'https://images.unsplash.com/photo-1576107232684-1279f3908594?auto=format&fit=crop&w=1000&q=80' },
+];
+
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   isOpen,
   onClose,
   menuItems,
   categories,
   settings,
+  orders = [],
   onUpdateMenuItems,
   onUpdateCategories,
   onUpdateSettings,
+  onUpdateOrderStatus,
+  onDeleteOrder,
+  onClearOrders,
   onResetToDefaults,
   currentLang,
 }) => {
@@ -85,9 +114,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [enteredPin, setEnteredPin] = useState('');
   const [pinError, setPinError] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<'dishes' | 'categories' | 'settings' | 'qr'>('dishes');
+  const [activeTab, setActiveTab] = useState<'dishes' | 'categories' | 'promotions' | 'orders' | 'settings' | 'qr'>('dishes');
   const [searchFilter, setSearchFilter] = useState('');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('all');
+
+  // Promo Banner State
+  const [promoLangTab, setPromoLangTab] = useState<Language>('ar');
+  const [copiedPromoPreview, setCopiedPromoPreview] = useState(false);
+
+  // Orders History State
+  const [orderStatusFilter, setOrderStatusFilter] = useState<string>('all');
+  const [orderSearchQuery, setOrderSearchQuery] = useState<string>('');
+  const [copiedOrderId, setCopiedOrderId] = useState<string | null>(null);
 
   // Edit Dish Modal State
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
@@ -382,6 +420,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <Unlock className="w-4 h-4 text-[#DDA15E]" />
                 <span>{t.admin.unlock}</span>
               </button>
+
+              <button
+                id="admin-close-pin-btn"
+                type="button"
+                onClick={onClose}
+                className="w-full py-2.5 rounded-2xl bg-[#F0ECE4] hover:bg-[#E8E5DF] text-[#283618] font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>{t.admin.cancel} (إغلاق لوحة الإدارة)</span>
+              </button>
             </form>
           </div>
         ) : (
@@ -393,6 +441,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               {[
                 { key: 'dishes', label: t.admin.dishesTab, icon: ChefHat },
                 { key: 'categories', label: t.admin.categoriesTab, icon: Layers },
+                { key: 'promotions', label: t.admin.promotionsTab, icon: Flame },
+                { key: 'orders', label: t.admin.ordersTab, icon: ShoppingBag, count: orders.length },
                 { key: 'settings', label: t.admin.settingsTab, icon: Sliders },
                 { key: 'qr', label: t.admin.qrGeneratorTab, icon: Globe },
               ].map((tab) => {
@@ -411,6 +461,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   >
                     <Icon className="w-4 h-4" />
                     <span>{tab.label}</span>
+                    {tab.count !== undefined && tab.count > 0 && (
+                      <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${isActive ? 'bg-[#BC6C25] text-white' : 'bg-[#283618] text-white'}`}>
+                        {tab.count}
+                      </span>
+                    )}
                   </button>
                 );
               })}
@@ -712,6 +767,781 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
               </div>
             )}
+
+            {/* Tab: Seasonal Promotions & Offers Banner */}
+            {activeTab === 'promotions' && (() => {
+              const currentBanner: PromotionalBannerConfig = settings.promotionalBanner || {
+                enabled: true,
+                badge: {
+                  ar: 'عرض الموسم الحصري 🔥',
+                  en: 'Seasonal Exclusive Offer 🔥',
+                  ku: 'ئۆفەری تایبەتی وەرز 🔥',
+                  tr: 'Mevsimlik Özel Fırsat 🔥',
+                  fa: 'پیشنهاد ویژه فصل 🔥',
+                  ur: 'سیزن کا خصوصی آفر 🔥',
+                },
+                title: {
+                  ar: 'مهرجان الكرسبي: خصم 20% على الوجبات العائلية والريزو',
+                  en: 'Golden Crispy Festival: 20% Off Family Meals & Rizo',
+                  ku: 'فێستیڤاڵی زێڕینی کرسپی: ٢٠٪ داشکاندن بۆ ژەمە خێزانییەکان',
+                  tr: 'Altın Çıtır Festivali: Aile Menüleri ve Rizoda %20 İndirim',
+                  fa: 'جشنواره کریسپی طلایی: ۲۰٪ تخفیف روی وعده‌های خانوادگی و ریزو',
+                  ur: 'گولڈن کرسپی فیسٹیول: فیملی میلز اور ریزو پر 20% رعایت',
+                },
+                description: {
+                  ar: 'استمتع بقطع الدجاج الذهبية المقرمشة والريزو الخاص مع البطاطا والصلصات الملكية بسعر مخفّض لفترة محدودة. استخدم الرمز عند تأكيد طلبك!',
+                  en: 'Enjoy our signature golden crispy chicken, famous rizo, fresh fries, and royal sauces at a special discount. Apply code at checkout!',
+                  ku: 'چێژ لە مریشکی سوورکراوەی ئاڵتوونی، برنجی ڕیزۆ و پەتاتەی گەرم بە داشکاندنی تایبەت وەربگرە!',
+                  tr: 'Özel marinasyonlu altın tavuk parçaları, çıtır patatesler ve enfes rizo menülerinde kaçırılmayacak fırsat!',
+                  fa: 'از طعم بی‌نظیر مرغ سوخاری طلایی و برنج ریزو با سس‌های مخصوص با تخفیف ویژه لذت ببرید!',
+                  ur: 'گولڈن کرسپی چکن، شاہی ریزو اور تازہ فرائز پر محدود مدت کے لیے خصوصی ڈسکاؤنٹ حاصل کریں!',
+                },
+                discountBadge: '20% OFF',
+                promoCode: 'SUPER20',
+                validUntil: {
+                  ar: 'سارٍ لفترة محدودة هذا الشهر',
+                  en: 'Limited Time Offer This Month',
+                  ku: 'بۆ ماوەیەکی دیاریکراو',
+                  tr: 'Bu aya özel sınırlı süre',
+                  fa: 'فرصت محدود در این ماه',
+                  ur: 'اس مہینے کے لیے محدود وقت',
+                },
+                ctaText: {
+                  ar: 'تصفح العرض واطلب الآن',
+                  en: 'Explore Offers & Order',
+                  ku: 'داواکاری بکە ئێستا',
+                  tr: 'Hemen İncele ve Sipariş Ver',
+                  fa: 'مشاهده منو و سفارش',
+                  ur: 'آفر دیکھیں اور آرڈر کریں',
+                },
+                accentTheme: 'amber',
+                imageUrl: 'https://images.unsplash.com/photo-1625813506062-0aeb1d7a094b?auto=format&fit=crop&w=1000&q=80',
+              };
+
+              const updateBanner = (updates: Partial<PromotionalBannerConfig>) => {
+                onUpdateSettings({
+                  ...settings,
+                  promotionalBanner: {
+                    ...currentBanner,
+                    ...updates,
+                  },
+                });
+              };
+
+              const updateLangField = (
+                field: 'badge' | 'title' | 'description' | 'validUntil' | 'ctaText',
+                val: string
+              ) => {
+                const currentObj = currentBanner[field] || { ar: '', en: '', ku: '', tr: '', fa: '', ur: '' };
+                updateBanner({
+                  [field]: {
+                    ...currentObj,
+                    [promoLangTab]: val,
+                  },
+                });
+              };
+
+              return (
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+                  
+                  {/* Master Toggle Card */}
+                  <div className="p-5 sm:p-6 rounded-3xl bg-white border border-[#E8E5DF] shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="w-8 h-8 rounded-xl bg-[#BC6C25]/20 text-[#BC6C25] flex items-center justify-center font-bold">
+                          <Flame className="w-5 h-5 text-[#BC6C25]" />
+                        </span>
+                        <h3 className="text-base sm:text-lg font-black text-[#283618]">
+                          {t.admin.promoBannerTitle}
+                        </h3>
+                      </div>
+                      <p className="text-xs text-[#6B705C] max-w-xl">
+                        {t.admin.promoBannerSubtitle}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <span className={`text-xs font-bold px-3 py-1 rounded-full ${currentBanner.enabled ? 'bg-emerald-100 text-emerald-800' : 'bg-stone-100 text-stone-600'}`}>
+                        {currentBanner.enabled ? 'نشط على الصفحة الرئيسية' : 'معطّل (مخفي)'}
+                      </span>
+                      <button
+                        id="toggle-promo-banner-enabled-btn"
+                        type="button"
+                        onClick={() => updateBanner({ enabled: !currentBanner.enabled })}
+                        className={`w-14 h-8 flex items-center rounded-full p-1 transition-colors duration-300 ${
+                          currentBanner.enabled ? 'bg-[#283618]' : 'bg-stone-300'
+                        }`}
+                      >
+                        <div
+                          className={`bg-white w-6 h-6 rounded-full shadow-md transform transition-transform duration-300 ${
+                            currentBanner.enabled ? (rtl ? '-translate-x-6' : 'translate-x-6') : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Live Interactive Preview Box */}
+                  <div className="p-5 sm:p-6 rounded-3xl bg-white border border-[#E8E5DF] shadow-xs space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-[#6B705C] uppercase tracking-wider flex items-center gap-1.5">
+                        <Eye className="w-4 h-4 text-[#BC6C25]" />
+                        <span>{t.admin.promoPreview}</span>
+                      </span>
+                      <span className="text-[11px] text-[#989B8B]">
+                        يظهر مباشرة أسفل الواجهة الترحيبية للزبائن
+                      </span>
+                    </div>
+
+                    {/* Preview Mock */}
+                    <div className={`p-5 sm:p-6 rounded-2xl text-white shadow-lg relative overflow-hidden transition-all duration-300 ${
+                      currentBanner.accentTheme === 'crimson' 
+                        ? 'bg-linear-to-r from-[#3B0D0D] via-[#4A1010] to-[#2B0A0A] border border-rose-500/30' 
+                        : currentBanner.accentTheme === 'emerald'
+                        ? 'bg-linear-to-r from-[#0F291E] via-[#163829] to-[#0A1F16] border border-emerald-500/30'
+                        : currentBanner.accentTheme === 'sunset'
+                        ? 'bg-linear-to-r from-[#2E1534] via-[#3C1A43] to-[#200D24] border border-amber-400/30'
+                        : 'bg-linear-to-r from-[#283618] via-[#354820] to-[#1E2912] border border-[#DDA15E]/40'
+                    }`}>
+                      <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                        <div className="flex-1 space-y-2.5 text-center md:text-start">
+                          <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+                            <span className="px-3 py-0.5 rounded-full text-xs font-bold bg-[#BC6C25]/25 border border-[#DDA15E]/40 text-[#FEFAE0]">
+                              {currentBanner.badge[promoLangTab] || currentBanner.badge.ar}
+                            </span>
+                            {currentBanner.discountBadge && (
+                              <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-linear-to-r from-[#BC6C25] to-[#DDA15E] text-white">
+                                {currentBanner.discountBadge}
+                              </span>
+                            )}
+                            {currentBanner.validUntil[promoLangTab] && (
+                              <span className="px-2.5 py-0.5 rounded-full text-xs bg-white/10 text-stone-200">
+                                {currentBanner.validUntil[promoLangTab]}
+                              </span>
+                            )}
+                          </div>
+
+                          <h4 className="text-lg sm:text-xl font-black text-white">
+                            {currentBanner.title[promoLangTab] || currentBanner.title.ar}
+                          </h4>
+
+                          <p className="text-xs sm:text-sm text-[#FEFAE0]/80 line-clamp-2">
+                            {currentBanner.description[promoLangTab] || currentBanner.description.ar}
+                          </p>
+
+                          <div className="pt-1 flex flex-wrap items-center justify-center md:justify-start gap-2.5">
+                            {currentBanner.promoCode && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setCopiedPromoPreview(true);
+                                  setTimeout(() => setCopiedPromoPreview(false), 2000);
+                                }}
+                                className="px-3 py-1.5 rounded-xl bg-black/40 border border-[#DDA15E]/40 text-xs font-mono font-bold text-[#FEFAE0] flex items-center gap-1.5 hover:bg-black/60 cursor-pointer"
+                              >
+                                <Tag className="w-3.5 h-3.5 text-[#DDA15E]" />
+                                <span>{currentBanner.promoCode}</span>
+                                <span className="text-[10px] text-[#DDA15E]">
+                                  {copiedPromoPreview ? '✓ تم النسخ!' : 'نسخ'}
+                                </span>
+                              </button>
+                            )}
+
+                            <span className="px-4 py-1.5 rounded-xl bg-linear-to-r from-[#BC6C25] to-[#DDA15E] text-[#1A2410] font-black text-xs">
+                              {currentBanner.ctaText[promoLangTab] || currentBanner.ctaText.ar}
+                            </span>
+                          </div>
+                        </div>
+
+                        {currentBanner.imageUrl && (
+                          <div className="relative w-48 h-32 rounded-xl overflow-hidden border border-white/20 shrink-0">
+                            <Image
+                              src={currentBanner.imageUrl}
+                              alt="Promo Preview"
+                              fill
+                              referrerPolicy="no-referrer"
+                              className="object-cover"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Settings Grid */}
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    {/* Left 2 Cols: Multilingual Content & Details */}
+                    <div className="lg:col-span-2 space-y-6">
+                      
+                      {/* Language Tabs Card */}
+                      <div className="p-5 sm:p-6 rounded-3xl bg-white border border-[#E8E5DF] shadow-xs space-y-4">
+                        <div className="flex items-center justify-between border-b border-[#E8E5DF] pb-3">
+                          <h4 className="text-sm font-bold text-[#283618]">
+                            محتوى وترجمة العرض الترويجي
+                          </h4>
+                          <span className="text-xs text-[#6B705C]">
+                            اختر اللغة للتعديل
+                          </span>
+                        </div>
+
+                        {/* Language Selector Buttons */}
+                        <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+                          {[
+                            { id: 'ar' as Language, label: '🇮🇶 العربية' },
+                            { id: 'en' as Language, label: '🇬🇧 English' },
+                            { id: 'ku' as Language, label: '☀️ کوردی' },
+                            { id: 'tr' as Language, label: '🇹🇷 Türkçe' },
+                            { id: 'fa' as Language, label: '🇮🇷 فارسی' },
+                            { id: 'ur' as Language, label: '🇵🇰 اردو' },
+                          ].map((l) => (
+                            <button
+                              key={l.id}
+                              type="button"
+                              onClick={() => setPromoLangTab(l.id)}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                                promoLangTab === l.id
+                                  ? 'bg-[#283618] text-white shadow-xs'
+                                  : 'bg-[#FAF9F6] text-[#6B705C] hover:bg-[#E8E5DF]'
+                              }`}
+                            >
+                              {l.label}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Language-Specific Inputs */}
+                        <div className="space-y-4 pt-1">
+                          <div>
+                            <label className="text-xs font-bold text-[#283618] block mb-1">
+                              {t.admin.promoBadgeLabel} ({promoLangTab.toUpperCase()})
+                            </label>
+                            <input
+                              type="text"
+                              value={currentBanner.badge[promoLangTab] || ''}
+                              onChange={(e) => updateLangField('badge', e.target.value)}
+                              placeholder="مثال: عرض الموسم الحصري 🔥"
+                              className="w-full px-3 py-2 text-xs sm:text-sm rounded-xl border border-[#E8E5DF] bg-[#FAF9F6] focus:bg-white text-[#283618]"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="text-xs font-bold text-[#283618] block mb-1">
+                              {t.admin.promoHeadingLabel} ({promoLangTab.toUpperCase()})
+                            </label>
+                            <input
+                              type="text"
+                              value={currentBanner.title[promoLangTab] || ''}
+                              onChange={(e) => updateLangField('title', e.target.value)}
+                              placeholder="مثال: مهرجان الكرسبي: خصم 20% على الوجبات العائلية"
+                              className="w-full px-3 py-2 text-xs sm:text-sm rounded-xl border border-[#E8E5DF] bg-[#FAF9F6] focus:bg-white text-[#283618] font-bold"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="text-xs font-bold text-[#283618] block mb-1">
+                              {t.admin.promoDescLabel} ({promoLangTab.toUpperCase()})
+                            </label>
+                            <textarea
+                              rows={3}
+                              value={currentBanner.description[promoLangTab] || ''}
+                              onChange={(e) => updateLangField('description', e.target.value)}
+                              placeholder="اكتب تفاصيل العرض والخصومات والوجبات المشمولة..."
+                              className="w-full px-3 py-2 text-xs sm:text-sm rounded-xl border border-[#E8E5DF] bg-[#FAF9F6] focus:bg-white text-[#283618]"
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-xs font-bold text-[#283618] block mb-1">
+                                {t.admin.promoValidityLabel} ({promoLangTab.toUpperCase()})
+                              </label>
+                              <input
+                                type="text"
+                                value={currentBanner.validUntil[promoLangTab] || ''}
+                                onChange={(e) => updateLangField('validUntil', e.target.value)}
+                                placeholder="مثال: سارٍ حتى نهاية الأسبوع"
+                                className="w-full px-3 py-2 text-xs sm:text-sm rounded-xl border border-[#E8E5DF] bg-[#FAF9F6] focus:bg-white text-[#283618]"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="text-xs font-bold text-[#283618] block mb-1">
+                                {t.admin.promoCtaLabel} ({promoLangTab.toUpperCase()})
+                              </label>
+                              <input
+                                type="text"
+                                value={currentBanner.ctaText[promoLangTab] || ''}
+                                onChange={(e) => updateLangField('ctaText', e.target.value)}
+                                placeholder="مثال: تصفح العرض واطلب الآن"
+                                className="w-full px-3 py-2 text-xs sm:text-sm rounded-xl border border-[#E8E5DF] bg-[#FAF9F6] focus:bg-white text-[#283618]"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                      </div>
+
+                    </div>
+
+                    {/* Right Column: Code, Theme & Presets */}
+                    <div className="space-y-6">
+                      
+                      {/* Code & Discount Tag */}
+                      <div className="p-5 rounded-3xl bg-white border border-[#E8E5DF] shadow-xs space-y-4">
+                        <h4 className="text-sm font-bold text-[#283618] border-b border-[#E8E5DF] pb-2">
+                          إعدادات الخصم والكوبون
+                        </h4>
+
+                        <div>
+                          <label className="text-xs font-bold text-[#283618] block mb-1">
+                            {t.admin.promoDiscountBadge}
+                          </label>
+                          <input
+                            type="text"
+                            value={currentBanner.discountBadge || ''}
+                            onChange={(e) => updateBanner({ discountBadge: e.target.value })}
+                            placeholder="20% OFF أو وفر 5,000 د.ع"
+                            className="w-full px-3 py-2 text-xs sm:text-sm rounded-xl border border-[#E8E5DF] bg-[#FAF9F6] font-bold text-[#BC6C25]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-bold text-[#283618] block mb-1">
+                            {t.admin.promoCodeLabel}
+                          </label>
+                          <input
+                            type="text"
+                            value={currentBanner.promoCode || ''}
+                            onChange={(e) => updateBanner({ promoCode: e.target.value.toUpperCase() })}
+                            placeholder="SUPER20"
+                            className="w-full px-3 py-2 text-xs sm:text-sm rounded-xl border border-[#E8E5DF] bg-[#FAF9F6] font-mono font-bold tracking-wider text-[#283618]"
+                          />
+                        </div>
+
+                        {/* Theme Palette */}
+                        <div>
+                          <label className="text-xs font-bold text-[#283618] block mb-1.5">
+                            {t.admin.promoThemeLabel}
+                          </label>
+                          <div className="grid grid-cols-2 gap-2">
+                            {[
+                              { id: 'amber', label: 'العسلي الذهبي 🔥', bg: 'bg-[#283618] border-[#DDA15E]' },
+                              { id: 'crimson', label: 'الناري الحار 🌶️', bg: 'bg-[#3B0D0D] border-rose-500' },
+                              { id: 'emerald', label: 'الأعشاب الطازجة 🌿', bg: 'bg-[#0F291E] border-emerald-500' },
+                              { id: 'sunset', label: 'الغروب الملكي 🌅', bg: 'bg-[#2E1534] border-amber-400' },
+                            ].map((th) => (
+                              <button
+                                key={th.id}
+                                type="button"
+                                onClick={() => updateBanner({ accentTheme: th.id as any })}
+                                className={`p-2.5 rounded-xl border text-[11px] font-bold text-white text-center transition-all ${th.bg} ${
+                                  currentBanner.accentTheme === th.id
+                                    ? 'ring-2 ring-offset-2 ring-[#BC6C25] scale-102'
+                                    : 'opacity-80 hover:opacity-100'
+                                }`}
+                              >
+                                {th.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Image Selector & Presets */}
+                      <div className="p-5 rounded-3xl bg-white border border-[#E8E5DF] shadow-xs space-y-3">
+                        <h4 className="text-sm font-bold text-[#283618] border-b border-[#E8E5DF] pb-2">
+                          {t.admin.promoImageLabel}
+                        </h4>
+
+                        <input
+                          type="text"
+                          value={currentBanner.imageUrl || ''}
+                          onChange={(e) => updateBanner({ imageUrl: e.target.value })}
+                          placeholder="https://images.unsplash.com/..."
+                          className="w-full px-3 py-2 text-xs rounded-xl border border-[#E8E5DF] bg-[#FAF9F6] text-[#283618]"
+                        />
+
+                        <span className="text-[11px] text-[#6B705C] font-semibold block">
+                          أو اختر صورة شهية جاهزة بضغطة واحدة:
+                        </span>
+
+                        <div className="grid grid-cols-3 gap-2">
+                          {promoImagePresets.map((preset, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => updateBanner({ imageUrl: preset.url })}
+                              className={`relative aspect-4/3 rounded-xl overflow-hidden border-2 transition-all group ${
+                                currentBanner.imageUrl === preset.url
+                                  ? 'border-[#BC6C25] ring-2 ring-[#BC6C25]/30'
+                                  : 'border-transparent hover:border-stone-400'
+                              }`}
+                              title={preset.label}
+                            >
+                              <Image
+                                src={preset.url}
+                                alt={preset.label}
+                                fill
+                                referrerPolicy="no-referrer"
+                                className="object-cover group-hover:scale-105 transition-transform"
+                              />
+                              <div className="absolute inset-x-0 bottom-0 bg-black/60 text-[9px] text-white font-bold p-1 truncate text-center">
+                                {preset.label.split(' ')[0]}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                </div>
+              );
+            })()}
+
+            {/* Tab: Orders History Tracking */}
+            {activeTab === 'orders' && (() => {
+              const filteredOrders = orders.filter((ord) => {
+                const matchesStatus = orderStatusFilter === 'all' || ord.status === orderStatusFilter;
+                const q = orderSearchQuery.toLowerCase().trim();
+                const matchesSearch = !q ||
+                  ord.id.toLowerCase().includes(q) ||
+                  ord.tableNumber.toLowerCase().includes(q);
+                return matchesStatus && matchesSearch;
+              });
+
+              const totalRevenue = orders.reduce((sum, o) => sum + (o.total || 0), 0);
+              const todayCount = orders.filter((o) => {
+                const d = new Date(o.timestamp);
+                const now = new Date();
+                return d.toDateString() === now.toDateString();
+              }).length;
+              const activeCount = orders.filter((o) => o.status === 'pending' || o.status === 'preparing').length;
+
+              const handleCopyReceipt = async (order: TableOrder) => {
+                try {
+                  let text = `👑 ${settings.name[currentLang] || settings.name.ar}\n`;
+                  text += `🧾 ${t.admin.orderIdLabel}: #${order.id}\n`;
+                  text += `🍽️ ${t.cart.tableNumber}: ${order.tableNumber}\n`;
+                  text += `⏰ ${new Date(order.timestamp).toLocaleString()}\n`;
+                  text += `--------------------------------\n`;
+                  order.items.forEach((item, idx) => {
+                    const name = item.menuItem.name[currentLang] || item.menuItem.name.ar;
+                    text += `${idx + 1}. ${item.quantity}x ${name} (${formatPrice(item.totalPrice, settings.currency, currentLang)})\n`;
+                    if (item.selectedSize) {
+                      text += `   ↳ ${item.selectedSize.name[currentLang] || item.selectedSize.name.ar}\n`;
+                    }
+                    if (item.selectedAddons?.length > 0) {
+                      text += `   ↳ + ${item.selectedAddons.map((a) => a.name[currentLang] || a.name.ar).join(', ')}\n`;
+                    }
+                  });
+                  text += `--------------------------------\n`;
+                  text += `💰 ${t.cart.total}: ${formatPrice(order.total, settings.currency, currentLang)}\n`;
+                  if (order.customerNotes) {
+                    text += `📝 ${order.customerNotes}\n`;
+                  }
+
+                  if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(text);
+                  } else {
+                    const el = document.createElement('textarea');
+                    el.value = text;
+                    document.body.appendChild(el);
+                    el.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(el);
+                  }
+                  setCopiedOrderId(order.id);
+                  setTimeout(() => setCopiedOrderId(null), 2000);
+                } catch {
+                  // ignore
+                }
+              };
+
+              const handleExportJson = () => {
+                const blob = new Blob([JSON.stringify(orders, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `orders-history-${new Date().toISOString().slice(0, 10)}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+              };
+
+              return (
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+                  
+                  {/* Stats Overview Banner */}
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                    
+                    <div className="p-4 rounded-2xl bg-white border border-[#E8E5DF] shadow-xs flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-[#283618]/10 text-[#283618] flex items-center justify-center font-bold">
+                        <ShoppingBag className="w-5 h-5 text-[#283618]" />
+                      </div>
+                      <div>
+                        <span className="text-[11px] font-bold text-[#6B705C] block">
+                          {t.admin.totalOrdersCount}
+                        </span>
+                        <span className="text-lg sm:text-xl font-black text-[#283618]">
+                          {orders.length}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-white border border-[#E8E5DF] shadow-xs flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
+                        <DollarSign className="w-5 h-5 text-emerald-700" />
+                      </div>
+                      <div>
+                        <span className="text-[11px] font-bold text-[#6B705C] block">
+                          {t.admin.totalRevenueAmount}
+                        </span>
+                        <span className="text-sm sm:text-base font-black text-emerald-700">
+                          {formatPrice(totalRevenue, settings.currency, currentLang)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-white border border-[#E8E5DF] shadow-xs flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-amber-50 text-[#BC6C25] flex items-center justify-center font-bold">
+                        <Clock className="w-5 h-5 text-[#BC6C25]" />
+                      </div>
+                      <div>
+                        <span className="text-[11px] font-bold text-[#6B705C] block">
+                          {t.admin.activeOrdersCount}
+                        </span>
+                        <span className="text-lg sm:text-xl font-black text-[#BC6C25]">
+                          {activeCount}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-white border border-[#E8E5DF] shadow-xs flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold">
+                        <Calendar className="w-5 h-5 text-blue-700" />
+                      </div>
+                      <div>
+                        <span className="text-[11px] font-bold text-[#6B705C] block">
+                          {t.admin.todayOrders}
+                        </span>
+                        <span className="text-lg sm:text-xl font-black text-blue-700">
+                          {todayCount}
+                        </span>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* Actions & Filters Bar */}
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-[#E8E5DF]">
+                    
+                    <div className="flex items-center gap-2 flex-1">
+                      <div className="relative flex-1">
+                        <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#989B8B]" />
+                        <input
+                          id="admin-orders-search-input"
+                          type="text"
+                          value={orderSearchQuery}
+                          onChange={(e) => setOrderSearchQuery(e.target.value)}
+                          placeholder="ابحث برقم الطلب أو رقم الطاولة..."
+                          className="w-full ps-9 pe-3 py-1.5 text-xs sm:text-sm rounded-xl bg-[#FAF9F6] border border-[#E8E5DF] text-[#283618]"
+                        />
+                      </div>
+
+                      <select
+                        id="admin-orders-status-filter"
+                        value={orderStatusFilter}
+                        onChange={(e) => setOrderStatusFilter(e.target.value)}
+                        className="px-3 py-1.5 text-xs sm:text-sm rounded-xl bg-[#FAF9F6] border border-[#E8E5DF] font-bold text-[#283618]"
+                      >
+                        <option value="all">{t.admin.filterAllStatus}</option>
+                        <option value="pending">{t.admin.statusPending}</option>
+                        <option value="preparing">{t.admin.statusPreparing}</option>
+                        <option value="completed">{t.admin.statusCompleted}</option>
+                        <option value="cancelled">{t.admin.statusCancelled}</option>
+                      </select>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        id="export-orders-json-btn"
+                        type="button"
+                        onClick={handleExportJson}
+                        className="px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-bold flex items-center gap-1.5"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>{t.admin.exportOrders}</span>
+                      </button>
+
+                      {onClearOrders && orders.length > 0 && (
+                        <button
+                          id="clear-all-orders-btn"
+                          type="button"
+                          onClick={() => {
+                            if (window.confirm(t.admin.confirmClearOrders)) {
+                              onClearOrders();
+                            }
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold flex items-center gap-1.5"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>{t.admin.clearOrdersHistory}</span>
+                        </button>
+                      )}
+                    </div>
+
+                  </div>
+
+                  {/* Orders Cards List */}
+                  {filteredOrders.length === 0 ? (
+                    <div className="p-12 text-center rounded-3xl bg-white border border-[#E8E5DF] space-y-2">
+                      <ShoppingBag className="w-12 h-12 text-[#989B8B] mx-auto" />
+                      <h4 className="text-base font-bold text-[#283618]">
+                        {t.admin.noOrdersMessage}
+                      </h4>
+                      <p className="text-xs text-[#6B705C]">
+                        ستظهر جميع الطلبات المكتملة عبر الواتساب أو الطاولات تلقائياً هنا مع تفاصيل المبالغ والأطباق.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {filteredOrders.map((ord) => {
+                        const statusColors = {
+                          pending: 'bg-amber-100 text-amber-800 border-amber-300',
+                          preparing: 'bg-blue-100 text-blue-800 border-blue-300',
+                          completed: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+                          cancelled: 'bg-stone-100 text-stone-600 border-stone-300',
+                        }[ord.status || 'pending'];
+
+                        return (
+                          <div
+                            key={ord.id}
+                            className="p-4 sm:p-5 rounded-2xl bg-white border border-[#E8E5DF] shadow-xs hover:border-[#BC6C25]/40 transition-colors space-y-3"
+                          >
+                            {/* Order Header Row */}
+                            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E8E5DF] pb-3">
+                              <div className="flex items-center gap-2.5">
+                                <span className="font-mono font-black text-sm text-[#283618] bg-[#FAF9F6] px-2.5 py-1 rounded-lg border border-[#E8E5DF]">
+                                  #{ord.id}
+                                </span>
+                                <span className="text-xs font-bold text-[#6B705C] flex items-center gap-1">
+                                  <span>🍽️ {ord.tableNumber}</span>
+                                </span>
+                                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-stone-100 text-stone-700">
+                                  {ord.orderType === 'whatsapp' ? t.admin.whatsappOrderBadge : t.admin.kitchenOrderBadge}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-[#6B705C] flex items-center gap-1">
+                                  <Clock className="w-3.5 h-3.5" />
+                                  <span>{new Date(ord.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                </span>
+
+                                {/* Status Selector */}
+                                <select
+                                  value={ord.status || 'pending'}
+                                  onChange={(e) => {
+                                    if (onUpdateOrderStatus) {
+                                      onUpdateOrderStatus(ord.id, e.target.value as any);
+                                    }
+                                  }}
+                                  className={`text-xs font-bold px-2.5 py-1 rounded-xl border cursor-pointer ${statusColors}`}
+                                >
+                                  <option value="pending">{t.admin.statusPending}</option>
+                                  <option value="preparing">{t.admin.statusPreparing}</option>
+                                  <option value="completed">{t.admin.statusCompleted}</option>
+                                  <option value="cancelled">{t.admin.statusCancelled}</option>
+                                </select>
+                              </div>
+                            </div>
+
+                            {/* Items List */}
+                            <div className="space-y-1.5">
+                              {ord.items.map((item, i) => (
+                                <div key={i} className="flex items-center justify-between text-xs text-[#283618]">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold text-[#BC6C25]">{item.quantity}x</span>
+                                    <span className="font-semibold">
+                                      {item.menuItem.name[currentLang] || item.menuItem.name.ar}
+                                    </span>
+                                    {item.selectedSize && (
+                                      <span className="text-[11px] text-[#6B705C]">
+                                        ({item.selectedSize.name[currentLang] || item.selectedSize.name.ar})
+                                      </span>
+                                    )}
+                                    {item.selectedAddons?.length > 0 && (
+                                      <span className="text-[10px] text-stone-500">
+                                        + {item.selectedAddons.map((a) => a.name[currentLang] || a.name.ar).join(', ')}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span className="font-mono text-[#6B705C]">
+                                    {formatPrice(item.totalPrice, settings.currency, currentLang)}
+                                  </span>
+                                </div>
+                              ))}
+
+                              {ord.customerNotes && (
+                                <div className="text-[11px] text-[#BC6C25] bg-[#BC6C25]/5 px-2 py-1 rounded-md mt-1">
+                                  📝 {ord.customerNotes}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Order Footer Row */}
+                            <div className="flex items-center justify-between pt-2 border-t border-[#E8E5DF] text-xs">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-[#6B705C] font-semibold">{t.admin.orderTotalLabel}:</span>
+                                <span className="text-base font-black text-[#283618]">
+                                  {formatPrice(ord.total, settings.currency, currentLang)}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyReceipt(ord)}
+                                  className="px-2.5 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-semibold flex items-center gap-1 cursor-pointer"
+                                >
+                                  {copiedOrderId === ord.id ? (
+                                    <>
+                                      <Check className="w-3 h-3 text-emerald-600" />
+                                      <span className="text-emerald-700 font-bold">{t.admin.orderTextCopied}</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Copy className="w-3 h-3" />
+                                      <span>{t.admin.copyOrderText}</span>
+                                    </>
+                                  )}
+                                </button>
+
+                                {onDeleteOrder && (
+                                  <button
+                                    type="button"
+                                    onClick={() => onDeleteOrder(ord.id)}
+                                    className="p-1 rounded-lg text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                    title="حذف هذا الطلب"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                </div>
+              );
+            })()}
 
             {/* Tab 3: Restaurant Settings */}
             {activeTab === 'settings' && (

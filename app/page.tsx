@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   MenuItem, 
   Category, 
@@ -26,6 +27,7 @@ import {
 } from '@/lib/i18n';
 import { Navbar } from '@/components/Navbar';
 import { HeroBanner } from '@/components/HeroBanner';
+import { PromotionalBanner } from '@/components/PromotionalBanner';
 import { CategoryBar } from '@/components/CategoryBar';
 import { MenuItemCard } from '@/components/MenuItemCard';
 import { ItemDetailModal } from '@/components/ItemDetailModal';
@@ -37,16 +39,10 @@ import {
   Utensils, 
   MapPin, 
   Phone, 
-  MessageCircle, 
   Globe, 
   Sparkles, 
   Search, 
-  ChevronUp,
-  ArrowRight,
-  ShieldCheck,
-  Share2,
-  Copy,
-  Check
+  ShieldCheck
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -107,8 +103,25 @@ export default function HomePage() {
 
       // 3. Stored Menu Items
       try {
-        const savedItems = localStorage.getItem('superfried_menu_items_v4');
-        if (savedItems) setMenuItems(JSON.parse(savedItems));
+        const savedItems = localStorage.getItem('superfried_menu_items_v5') || localStorage.getItem('superfried_menu_items_v4');
+        if (savedItems) {
+          const parsed = JSON.parse(savedItems) as MenuItem[];
+          const merged = parsed.map((item) => {
+            const initial = initialMenuItems.find((i) => i.id === item.id);
+            if (initial) {
+              return {
+                ...item,
+                name: { ...initial.name, ...item.name },
+                description: { ...initial.description, ...item.description },
+                ingredients: { ...initial.ingredients, ...(item.ingredients || {}) },
+              };
+            }
+            return item;
+          });
+          setMenuItems(merged);
+          localStorage.setItem('superfried_menu_items_v5', JSON.stringify(merged));
+          localStorage.removeItem('superfried_menu_items_v4');
+        }
       } catch {}
 
       // 4. Stored Categories
@@ -166,7 +179,7 @@ export default function HomePage() {
   // Persist State Updates
   const handleUpdateMenuItems = (items: MenuItem[]) => {
     setMenuItems(items);
-    localStorage.setItem('superfried_menu_items_v4', JSON.stringify(items));
+    localStorage.setItem('superfried_menu_items_v5', JSON.stringify(items));
   };
 
   const handleUpdateCategories = (cats: Category[]) => {
@@ -213,6 +226,7 @@ export default function HomePage() {
     setSettings(initialRestaurantSettings);
     setReviews(initialReviews);
     setOrders(initialOrders);
+    localStorage.removeItem('superfried_menu_items_v5');
     localStorage.removeItem('superfried_menu_items_v4');
     localStorage.removeItem('superfried_menu_categories_v4');
     localStorage.removeItem('superfried_menu_items_v3');
@@ -309,63 +323,22 @@ export default function HomePage() {
     localStorage.removeItem('superfried_menu_cart_v3');
   };
 
-  const [footerCopied, setFooterCopied] = useState<boolean>(false);
-
-  const handleFooterShareWhatsApp = () => {
-    let menuUrl = '';
-    if (typeof window !== 'undefined') {
-      try {
-        const url = new URL(window.location.href);
-        url.searchParams.set('lang', currentLang);
-        if (tableNumber) {
-          url.searchParams.set('table', tableNumber);
-        }
-        menuUrl = url.toString();
-      } catch {
-        menuUrl = window.location.href;
-      }
-    }
-    const restaurantName = settings.name[currentLang] || settings.name.ar;
-    const shareText = `🍟 *${restaurantName}*\n${t.quickActions.shareMenuText}\n\n📍 ${settings.address[currentLang] || settings.address.ar}\n\n📱 *رابط المنيو الرقمي | Digital Menu:*\n${menuUrl}`;
-    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
-    window.open(whatsappUrl, '_blank');
-  };
-
-  const handleFooterCopyLink = async () => {
-    let menuUrl = '';
-    if (typeof window !== 'undefined') {
-      try {
-        const url = new URL(window.location.href);
-        url.searchParams.set('lang', currentLang);
-        if (tableNumber) {
-          url.searchParams.set('table', tableNumber);
-        }
-        menuUrl = url.toString();
-      } catch {
-        menuUrl = window.location.href;
-      }
-    }
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(menuUrl);
-      } else {
-        const el = document.createElement('textarea');
-        el.value = menuUrl;
-        document.body.appendChild(el);
-        el.select();
-        document.execCommand('copy');
-        document.body.removeChild(el);
-      }
-      setFooterCopied(true);
-      setTimeout(() => setFooterCopied(false), 2500);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
   const scrollToMenu = () => {
     if (menuSectionRef.current) {
       menuSectionRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const handleGoHome = () => {
+    setActiveCategoryId('all');
+    setSearchQuery('');
+    setSelectedDietaryTag('all');
+    setIsCartOpen(false);
+    setIsWaiterModalOpen(false);
+    setIsAdminOpen(false);
+    setSelectedItemForDetail(null);
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -437,6 +410,7 @@ export default function HomePage() {
         onOpenAdminModal={() => setIsAdminOpen(true)}
         tableNumber={tableNumber}
         settings={settings}
+        onGoHome={handleGoHome}
       />
 
       {/* Hero Welcome Section */}
@@ -445,6 +419,13 @@ export default function HomePage() {
         settings={settings}
         onScrollToMenu={scrollToMenu}
         onOpenWaiterModal={() => setIsWaiterModalOpen(true)}
+      />
+
+      {/* Seasonal Promotional Banner */}
+      <PromotionalBanner
+        currentLang={currentLang}
+        settings={settings}
+        onScrollToMenu={scrollToMenu}
       />
 
       {/* Sticky Category Bar & Filter */}
@@ -529,85 +510,75 @@ export default function HomePage() {
       </main>
 
       {/* Floating Bottom Sticky Bar for Mobile when Cart has Items */}
-      {totalCartCount > 0 && !isCartOpen && (
-        <div className="fixed bottom-4 start-4 end-4 sm:start-auto sm:end-6 z-40 max-w-md mx-auto sm:max-w-none animate-in slide-in-from-bottom-4">
-          <button
-            id="floating-cart-bar-btn"
-            onClick={() => setIsCartOpen(true)}
-            className="w-full sm:w-auto px-5 py-3.5 rounded-2xl bg-[#283618] hover:bg-[#1A2410] text-white font-black text-sm shadow-xl shadow-[#1A2410]/30 flex items-center justify-between sm:gap-6 backdrop-blur-md border border-[#3D5024] transition-transform active:scale-98"
+      <AnimatePresence>
+        {totalCartCount > 0 && !isCartOpen && (
+          <motion.div
+            key="floating-cart-container"
+            initial={{ opacity: 0, y: 36, scale: 0.88 }}
+            animate={{ 
+              opacity: 1, 
+              y: 0, 
+              scale: 1,
+              transition: {
+                type: 'spring',
+                stiffness: 340,
+                damping: 18,
+                mass: 0.8
+              }
+            }}
+            exit={{ 
+              opacity: 0, 
+              y: 24, 
+              scale: 0.9,
+              transition: { duration: 0.2 } 
+            }}
+            className="fixed bottom-4 start-4 end-4 sm:start-auto sm:end-6 z-40 max-w-md mx-auto sm:max-w-none"
           >
-            <div className="flex items-center gap-2.5">
-              <span className="w-7 h-7 rounded-full bg-[#BC6C25] text-white text-xs font-black flex items-center justify-center">
-                {totalCartCount}
-              </span>
-              <span>{t.cart.title}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[#FEFAE0]">
-                {formatPrice(cartSubtotal, settings.currency, currentLang)}
-              </span>
-              <ArrowRight className={`w-4 h-4 ${rtl ? 'rotate-180' : ''}`} />
-            </div>
-          </button>
-        </div>
-      )}
+            <motion.button
+              key={`floating-cart-btn-${totalCartCount}`}
+              initial={{ scale: 0.95 }}
+              animate={{ 
+                scale: [0.95, 1.05, 0.98, 1],
+                transition: {
+                  duration: 0.42,
+                  times: [0, 0.4, 0.75, 1],
+                  ease: 'easeOut'
+                }
+              }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.97 }}
+              id="floating-cart-bar-btn"
+              onClick={() => setIsCartOpen(true)}
+              className="w-full sm:w-auto px-5 py-3.5 rounded-2xl bg-[#283618] hover:bg-[#1A2410] text-white font-black text-sm shadow-xl shadow-[#1A2410]/30 flex items-center justify-between sm:gap-6 backdrop-blur-md border border-[#3D5024] cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5">
+                <motion.span 
+                  key={`badge-count-${totalCartCount}`}
+                  initial={{ scale: 0.6, rotate: -12 }}
+                  animate={{ 
+                    scale: [0.6, 1.28, 1],
+                    rotate: [-12, 6, 0],
+                    transition: { duration: 0.35, ease: 'backOut' }
+                  }}
+                  className="w-7 h-7 rounded-full bg-[#BC6C25] text-white text-xs font-black flex items-center justify-center shadow-xs"
+                >
+                  {totalCartCount}
+                </motion.span>
+                <span>{t.cart.title}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[#FEFAE0]">
+                  {formatPrice(cartSubtotal, settings.currency, currentLang)}
+                </span>
+              </div>
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Footer */}
       <footer className="bg-[#1A2410] text-[#E8E5DF] py-12 border-t border-[#283618] mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-          
-          {/* Share Menu Banner */}
-          <div className="p-6 rounded-3xl bg-linear-to-r from-[#283618] to-[#3D5024] border border-[#606C38]/40 shadow-lg flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-4 text-center md:text-start">
-              <div className="w-14 h-14 rounded-2xl bg-[#25D366]/20 border border-[#25D366]/40 flex items-center justify-center shrink-0">
-                <MessageCircle className="w-7 h-7 text-[#25D366]" />
-              </div>
-              <div>
-                <h4 className="text-base sm:text-lg font-black text-white flex items-center justify-center md:justify-start gap-2">
-                  <span>{t.quickActions.shareMenu}</span>
-                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#25D366] text-white font-bold">WhatsApp</span>
-                </h4>
-                <p className="text-xs text-[#E8E5DF] mt-1 max-w-xl">
-                  {currentLang === 'ar' ? 'شارك المنيو الرقمي وقائمة الوجبات اللذيذة مع أصدقائك وعائلتك عبر واتساب بضغطة زر واحدة!' :
-                   currentLang === 'fa' ? 'منوی دیجیتال و لیست غذاهای لذیذ را با یک کلیک از طریق واتس‌اپ برای دوستان و خانواده بفرستید!' :
-                   currentLang === 'ur' ? 'ڈیجیٹل مینو اور لذیذ کھانوں کی فہرست واٹس ایپ پر ایک کلک سے دوستوں اور فیملی کے ساتھ شیئر کریں!' :
-                   currentLang === 'ku' ? 'مینیۆی دیجیتاڵی و لیستی خواردنە بەتامەکان بە یەک کلیک لە ڕێگەی واتسئەپەوە بۆ هاوڕێکانت بنێرە!' :
-                   currentLang === 'tr' ? 'Dijital menüyü ve lezzetli yemek listesini tek tıkla WhatsApp üzerinden sevdiklerinizle paylaşın!' :
-                   'Share our mouthwatering digital menu URL directly with friends & family via WhatsApp!'}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-center gap-3 shrink-0">
-              <button
-                id="footer-share-whatsapp-btn"
-                onClick={handleFooterShareWhatsApp}
-                className="px-5 py-3 rounded-2xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-xl hover:scale-105 transition-all flex items-center gap-2 group cursor-pointer"
-              >
-                <MessageCircle className="w-4 h-4 fill-white group-hover:scale-110 transition-transform" />
-                <span>{t.quickActions.shareMenuWhatsapp}</span>
-              </button>
-
-              <button
-                id="footer-copy-link-btn"
-                onClick={handleFooterCopyLink}
-                className="px-4 py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-[#FEFAE0] border border-white/20 text-xs sm:text-sm font-semibold transition-colors flex items-center gap-2 cursor-pointer"
-              >
-                {footerCopied ? (
-                  <>
-                    <Check className="w-4 h-4 text-[#25D366]" />
-                    <span className="text-[#25D366] font-bold">{t.quickActions.menuLinkCopied}</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-4 h-4 text-[#E9EDC9]" />
-                    <span>{t.quickActions.copyMenuLink}</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-8 border-b border-[#283618]">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-[#283618] text-white flex items-center justify-center text-2xl border border-[#3D5024]">

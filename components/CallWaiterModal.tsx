@@ -15,10 +15,7 @@ import {
   Check, 
   MapPin, 
   Star, 
-  Phone, 
-  MessageCircle,
-  Sparkles,
-  Share2
+  Sparkles
 } from 'lucide-react';
 
 interface CallWaiterModalProps {
@@ -39,55 +36,12 @@ export const CallWaiterModal: React.FC<CallWaiterModalProps> = ({
   settings,
 }) => {
   const [copiedWifi, setCopiedWifi] = useState(false);
-  const [copiedMenuLink, setCopiedMenuLink] = useState(false);
   const [requestSentMessage, setRequestSentMessage] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
   const t = translations[currentLang];
   const rtl = isRtl(currentLang);
-
-  const getMenuShareUrl = () => {
-    if (typeof window === 'undefined') return '';
-    try {
-      const url = new URL(window.location.href);
-      url.searchParams.set('lang', currentLang);
-      if (tableNumber) {
-        url.searchParams.set('table', tableNumber);
-      }
-      return url.toString();
-    } catch {
-      return window.location.href;
-    }
-  };
-
-  const handleShareMenuWhatsApp = () => {
-    const menuUrl = getMenuShareUrl();
-    const restaurantName = settings.name[currentLang] || settings.name.ar;
-    const shareText = `🍟 *${restaurantName}*\n${t.quickActions.shareMenuText}\n\n📍 ${settings.address[currentLang] || settings.address.ar}\n\n📱 *رابط المنيو الرقمي | Digital Menu:*\n${menuUrl}`;
-    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
-    window.open(whatsappUrl, '_blank');
-  };
-
-  const handleCopyMenuLink = async () => {
-    const menuUrl = getMenuShareUrl();
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(menuUrl);
-      } else {
-        const el = document.createElement('textarea');
-        el.value = menuUrl;
-        document.body.appendChild(el);
-        el.select();
-        document.execCommand('copy');
-        document.body.removeChild(el);
-      }
-      setCopiedMenuLink(true);
-      setTimeout(() => setCopiedMenuLink(false), 2500);
-    } catch (e) {
-      console.error(e);
-    }
-  };
 
   const handleCopyWifi = () => {
     if (settings.wifiPassword) {
@@ -264,88 +218,6 @@ export const CallWaiterModal: React.FC<CallWaiterModalProps> = ({
             </div>
           )}
 
-          {/* Share Menu Card */}
-          <div className="p-4 rounded-2xl bg-linear-to-r from-[#FEFAE0] to-[#E9EDC9]/50 border border-[#E9EDC9] space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Share2 className="w-4 h-4 text-[#BC6C25]" />
-                <span className="text-xs font-bold uppercase tracking-wider text-[#283618]">
-                  {t.quickActions.shareMenu}
-                </span>
-              </div>
-              <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#25D366]/20 text-[#128C7E] font-bold">
-                WhatsApp
-              </span>
-            </div>
-
-            <p className="text-xs text-[#6B705C]">
-              {t.quickActions.shareMenuText}
-            </p>
-
-            <div className="flex items-center gap-2">
-              <button
-                id="modal-share-menu-whatsapp-btn"
-                onClick={handleShareMenuWhatsApp}
-                className="flex-1 px-3.5 py-2 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-bold shadow-xs transition-colors flex items-center justify-center gap-1.5"
-              >
-                <MessageCircle className="w-3.5 h-3.5" />
-                <span>{t.quickActions.shareMenuWhatsapp}</span>
-              </button>
-
-              <button
-                id="modal-copy-menu-link-btn"
-                onClick={handleCopyMenuLink}
-                className="px-3 py-2 rounded-xl bg-white border border-[#E8E5DF] hover:bg-[#FAF9F6] text-[#283618] text-xs font-semibold transition-colors flex items-center gap-1.5 shrink-0 shadow-2xs"
-              >
-                {copiedMenuLink ? (
-                  <>
-                    <Check className="w-3.5 h-3.5 text-emerald-600" />
-                    <span className="text-emerald-600 font-bold">{t.quickActions.menuLinkCopied}</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3.5 h-3.5 text-[#6B705C]" />
-                    <span>{t.quickActions.copyMenuLink}</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Direct WhatsApp Contact */}
-          {(settings.whatsappNumber || settings.phone) && (
-            <div className="p-3.5 rounded-2xl bg-[#25D366]/10 border border-[#25D366]/30 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-[#25D366] text-white flex items-center justify-center shrink-0">
-                  <MessageCircle className="w-4 h-4" />
-                </div>
-                <div>
-                  <p className="text-xs sm:text-sm font-bold text-[#1A2410]">
-                    WhatsApp: {settings.phone || settings.whatsappNumber}
-                  </p>
-                  <p className="text-[11px] text-[#6B705C]">
-                    {currentLang === 'ar' ? 'تواصل مباشر مع إدارة المطعم وخدمة الزبائن' :
-                     currentLang === 'fa' ? 'ارتباط مستقیم با مدیریت و پشتیبانی رستوران' :
-                     currentLang === 'ur' ? 'ریسٹورنٹ مینجمنٹ اور کسٹمر سروس سے براہ راست رابطہ' :
-                     currentLang === 'ku' ? 'پەیوەندی ڕاستەوخۆ لەگەڵ بەڕێوەبەرایەتی' :
-                     currentLang === 'tr' ? 'Restoran yönetimiyle doğrudan WhatsApp iletişimi' :
-                     'Direct WhatsApp chat with restaurant service'}
-                  </p>
-                </div>
-              </div>
-              <a
-                id="modal-direct-whatsapp-btn"
-                href={`https://wa.me/${(settings.whatsappNumber || settings.phone).replace(/[^0-9]/g, '')}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-3.5 py-2 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-bold shadow-xs transition-colors shrink-0 flex items-center gap-1.5"
-              >
-                <MessageCircle className="w-3.5 h-3.5" />
-                <span>WhatsApp</span>
-              </a>
-            </div>
-          )}
-
           {/* Location & Reviews */}
           <div className="space-y-2">
             <h4 className="text-xs font-bold text-[#6B705C] uppercase tracking-wider">
@@ -376,6 +248,19 @@ export const CallWaiterModal: React.FC<CallWaiterModalProps> = ({
                   <Star className="w-3.5 h-3.5 text-[#DDA15E] fill-[#DDA15E]" />
                 </a>
               )}
+            </div>
+
+            {/* Explicit Bottom Close Button */}
+            <div className="pt-3 border-t border-[#E8E5DF] flex justify-end">
+              <button
+                id="close-waiter-modal-bottom-btn"
+                type="button"
+                onClick={onClose}
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-[#F0ECE4] hover:bg-[#E8E5DF] text-[#283618] text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+                <span>إغلاق النافذة / Close</span>
+              </button>
             </div>
           </div>
 
