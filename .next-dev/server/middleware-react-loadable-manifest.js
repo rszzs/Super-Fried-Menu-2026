@@ -1,0 +1,1 @@
+self.__REACT_LOADABLE_MANIFEST="{\"components/CartDrawer.tsx -> canvas-confetti\":{\"id\":\"components/CartDrawer.tsx -> canvas-confetti\",\"files\":[]}}"

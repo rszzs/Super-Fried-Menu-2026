@@ -134,7 +134,12 @@ export default function HomePage() {
       try {
         const savedSettings = localStorage.getItem('superfried_menu_settings_v5');
         if (savedSettings) {
-          setSettings(JSON.parse(savedSettings));
+          const parsed = JSON.parse(savedSettings);
+          if (!parsed.googleMapsUrl || parsed.googleMapsUrl === 'https://maps.google.com/?q=Super+Fried+Kadhimiya+Baghdad') {
+            parsed.googleMapsUrl = 'https://maps.app.goo.gl/CkbfMrReVPEhZ1p66';
+            localStorage.setItem('superfried_menu_settings_v5', JSON.stringify(parsed));
+          }
+          setSettings(parsed);
         } else {
           localStorage.removeItem('superfried_menu_settings_v4');
           localStorage.removeItem('superfried_menu_settings_v3');

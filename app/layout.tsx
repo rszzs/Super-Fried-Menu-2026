@@ -2,9 +2,9 @@ import type {Metadata} from 'next';
 import './globals.css'; // Global styles
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.APP_URL || 'https://ais-dev-ggjvemqp3tkw5we4bsgiuc-355491098015.europe-west2.run.app'),
-  title: 'سوبر فرايد | Super Fried - الكاظمية باب المراد',
-  description: 'قائمة طعام رقمية لوجبات الكنتاكي، البرغر، السندويشات، أطباق الريزو والمقبلات المقرمشة والمشروبات - سوبر فرايد الكاظمية باب المراد.',
+  metadataBase: new URL(process.env.APP_URL || 'https://ais-dev-aer7ckqizzfc3xfobhsizv-585518993069.europe-west1.run.app'),
+  title: 'Remix مطعم سوبر فرايد - بغداد',
+  description: 'A luxury, high-performance multilingual restaurant digital menu (Arabic, English, Kurdish, Turkish) with category filtering, item customizers, WhatsApp table ordering, dynamic QR code management, and live admin dashboard.',
   icons: {
     icon: [
       { url: '/logo.svg', type: 'image/svg+xml' },
@@ -14,16 +14,16 @@ export const metadata: Metadata = {
     ],
   },
   openGraph: {
-    title: 'سوبر فرايد | Super Fried - الكاظمية باب المراد',
-    description: 'قائمة طعام رقمية لوجبات الكنتاكي، البرغر، السندويشات، أطباق الريزو والمقبلات المقرمشة والمشروبات - سوبر فرايد الكاظمية.',
+    title: 'Remix مطعم سوبر فرايد - بغداد',
+    description: 'A luxury, high-performance multilingual restaurant digital menu (Arabic, English, Kurdish, Turkish) with category filtering, item customizers, WhatsApp table ordering, dynamic QR code management, and live admin dashboard.',
     type: 'website',
     locale: 'ar_IQ',
-    siteName: 'Super Fried - سوبر فرايد',
+    siteName: 'Remix مطعم سوبر فرايد - بغداد',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'سوبر فرايد | Super Fried',
-    description: 'قائمة طعام رقمية لوجبات الكنتاكي، البرغر، السندويشات، أطباق الريزو والمقبلات المقرمشة.',
+    title: 'Remix مطعم سوبر فرايد - بغداد',
+    description: 'A luxury, high-performance multilingual restaurant digital menu (Arabic, English, Kurdish, Turkish) with category filtering, item customizers, WhatsApp table ordering, dynamic QR code management, and live admin dashboard.',
   },
 };
 

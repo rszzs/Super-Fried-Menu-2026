@@ -2095,7 +2095,7 @@ export const initialRestaurantSettings: RestaurantSettings = {
   },
   phone: '+964 770 330 9000',
   whatsappNumber: '+9647703309000',
-  googleMapsUrl: 'https://maps.google.com/?q=Super+Fried+Kadhimiya+Baghdad',
+  googleMapsUrl: 'https://maps.app.goo.gl/CkbfMrReVPEhZ1p66',
   address: {
     ar: 'بغداد، الكاظمية، شارع باب المراد',
     en: 'Bab Al-Murad St., Kadhimiya, Baghdad',

@@ -74,18 +74,16 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
                 <span>{t.viewMenu}</span>
               </button>
 
-              {settings.googleMapsUrl && (
-                <a
-                  id="hero-google-maps-link"
-                  href={settings.googleMapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm sm:text-base font-medium backdrop-blur-sm transition-all flex items-center gap-2"
-                >
-                  <MapPin className="w-4 h-4 text-[#DDA15E]" />
-                  <span>{t.quickActions.directionsGoogleMaps}</span>
-                </a>
-              )}
+              <a
+                id="hero-google-maps-link"
+                href={settings.googleMapsUrl || 'https://maps.app.goo.gl/CkbfMrReVPEhZ1p66'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm sm:text-base font-medium backdrop-blur-sm transition-all flex items-center gap-2"
+              >
+                <MapPin className="w-4 h-4 text-[#DDA15E]" />
+                <span>{t.quickActions.directionsGoogleMaps}</span>
+              </a>
 
               <button
                 id="hero-wifi-info-btn"
